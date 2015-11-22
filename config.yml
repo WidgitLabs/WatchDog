@@ -1,0 +1,8 @@
+prefix:
+  success: '&a[WatchDog]'
+  notice: '&6[WatchDog]'  
+messages:
+  playeradded: 'Player %PLAYER% has been added to the watchlist!'
+  playerremoved: 'Player %PLAYER% has been removed from the watchlist!'
+  playernotfound: 'Player %PLAYER% is not in the watchlist!'
+  playeronline: 'Player &c%PLAYER% &fhas logged in! Run &c/wd info %PLAYER% &ffor details.'
