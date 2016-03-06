@@ -1,7 +1,7 @@
 package com.section214.watchdog;
 
 import java.util.Calendar;
-
+import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -80,6 +80,9 @@ public class WatchDog extends JavaPlugin {
 								removePlayer(sender, player);
 							}
 							
+							return true;
+						case "count":
+							getCount(sender);
 							return true;
 						case "info":
 							getInfo(sender, player);
@@ -191,6 +194,28 @@ public class WatchDog extends JavaPlugin {
 			
 			printMessage(sender, "success", notFoundNotice);
 		}
+	}
+	
+	
+	/**
+	 * Retrieve a count of the players in the watchlist
+	 * 
+	 * @since       1.1.0
+	 * @return      void
+	 */
+	public void getCount(CommandSender sender) {
+		Set<String> users = getConfig().getConfigurationSection("users").getKeys(true);
+		int userCount = 0;
+		
+		if (users != null) {
+			for(String user: users) {
+				if(! user.contains(".")) {
+					userCount++;
+				}
+			}
+		}
+		
+		printMessage(sender, "success", "There are " + userCount + " users in the watchlist.");
 	}
 	
 	
