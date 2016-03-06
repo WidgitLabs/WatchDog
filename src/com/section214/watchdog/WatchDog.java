@@ -56,7 +56,7 @@ public class WatchDog extends JavaPlugin {
 		Integer length = 0;
 
 		if (command.getName().equalsIgnoreCase("wd")) {
-			if (sender.hasPermission("watchdog.use")) {
+			if (sender.hasPermission("watchdog.use") || sender.isOp()) {
 				length = args.length;
 
 				if (length > 0) {
@@ -70,13 +70,13 @@ public class WatchDog extends JavaPlugin {
 					
 					switch(args[0].toLowerCase()) {
 						case "add":
-							if (sender.hasPermission("watchdog.add")) {
+							if (sender.hasPermission("watchdog.add") || sender.isOp()) {
 								addPlayer(sender, player, reason);
 							}
 							
 							return true;
 						case "remove":
-							if (sender.hasPermission("watchdog.remove")) {
+							if (sender.hasPermission("watchdog.remove") || sender.isOp()) {
 								removePlayer(sender, player);
 							}
 							
@@ -201,14 +201,14 @@ public class WatchDog extends JavaPlugin {
 	 * @return      void
 	 */
 	public void sendHelp(CommandSender sender) {
-		if (sender.hasPermission("watchdog.use")) {
+		if (sender.hasPermission("watchdog.use") || sender.isOp()) {
 			sender.sendMessage(ChatColor.DARK_AQUA + "WatchDog Help:");
 			
-			if (sender.hasPermission("watchdog.add")) {
+			if (sender.hasPermission("watchdog.add") || sender.isOp()) {
 				sender.sendMessage(ChatColor.GOLD + "/wd add [player] [reason] -- Adds a player to the watchlist");
 			}
 			
-			if (sender.hasPermission("watchdog.remove")) {
+			if (sender.hasPermission("watchdog.remove") || sender.isOp()) {
 				sender.sendMessage(ChatColor.GOLD + "/wd remove [player] -- Removes a player from the watchlist");
 			}
 			
