@@ -177,7 +177,7 @@ public class WatchDog extends JavaPlugin {
 	
 	
 	/**
-	 * Retrieve the info for a player i the watchlist
+	 * Retrieve the info for a player in the watchlist
 	 * 
 	 * @since       1.0.0
 	 * @return      void
