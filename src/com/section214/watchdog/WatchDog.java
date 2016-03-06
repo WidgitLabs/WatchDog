@@ -1,6 +1,7 @@
 package com.section214.watchdog;
 
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -83,6 +84,9 @@ public class WatchDog extends JavaPlugin {
 							return true;
 						case "count":
 							getCount(sender);
+							return true;
+						case "search":
+							searchUsers(sender, player);
 							return true;
 						case "info":
 							getInfo(sender, player);
@@ -193,6 +197,51 @@ public class WatchDog extends JavaPlugin {
 			notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
 			
 			printMessage(sender, "success", notFoundNotice);
+		}
+	}
+	
+	
+	/**
+	 * Search for a player in the watchlist
+	 * 
+	 * @since       1.0.0
+	 * @return      void
+	 */
+	public void searchUsers(CommandSender sender, String player) {
+		if (getConfig().get("users." + player) != null) {
+			getInfo(sender, player);
+		} else {
+			Set<String> users = getConfig().getConfigurationSection("users").getKeys(true);
+			Set<String> found = new HashSet<String>();
+			int userCount = 0;
+			
+			if (users != null) {
+				for(String user: users) {
+					if(! user.contains(".") && user.toLowerCase().contains(player.toLowerCase())) {
+						found.add(user);
+						userCount++;
+					}
+				}
+			}
+
+			if (! found.isEmpty()) {
+				String addedBy = "";
+				String addedOn = "";
+				String reason = "";
+				
+				printMessage(sender, "success", "Found the following " + userCount + " players:");
+				
+				for(String foundUser: found) {
+					addedBy = getConfig().getString("users." + foundUser + ".addedby", "console");
+					addedOn = getConfig().getString("users." + foundUser + ".addedon", "unknown");
+					reason = getConfig().getString("users." + foundUser + ".reason", "unknown");
+					
+					sender.sendMessage(ChatColor.GOLD + "    + " + ChatColor.WHITE + foundUser + ChatColor.GOLD + " [" + addedBy + " / " + addedOn + "]");
+					sender.sendMessage("            - " + reason);
+				}
+			} else {
+				printMessage(sender, "success", "No users found matching \"" + player + "\"");
+			}
 		}
 	}
 	
