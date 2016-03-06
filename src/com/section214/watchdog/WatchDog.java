@@ -287,6 +287,7 @@ public class WatchDog extends JavaPlugin {
 			}
 			
 			sender.sendMessage(ChatColor.GOLD + "/wd count -- Shows the number of players in the watchlist");
+			sender.sendMessage(ChatColor.GOLD + "/wd search [player] -- Search for a player in the watchlist");
 			sender.sendMessage(ChatColor.GOLD + "/wd info [player] -- Display the details of a watchlist entry");
 		}
 	}
