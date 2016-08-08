@@ -1,4 +1,4 @@
-package com.section214.watchdog;
+package com.widgetpowered.watchdog;
 
 import java.util.Calendar;
 import java.util.HashSet;

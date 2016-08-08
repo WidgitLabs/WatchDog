@@ -1,4 +1,4 @@
-package com.section214.watchdog;
+package com.widgetpowered.watchdog;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,7 +24,7 @@ public class PlayerListener implements Listener {
 			onlineNotice = onlineNotice.replace("%PLAYER%", name);
 			
 			for (final Player player : WatchDog.getInstance().getServer().getOnlinePlayers()) {
-				if ((player != null) && (player instanceof Player) && player.hasPermission("watchdog.statusupdates")) {
+				if ((player != null) && (player instanceof Player) && (player.hasPermission("watchdog.statusupdates") || player.isOp())) {
 					WatchDog.getInstance().printMessage(player, "notice", onlineNotice);
 				}
 			}

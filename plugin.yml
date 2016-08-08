@@ -1,14 +1,14 @@
 name: WatchDog
-main: com.section214.watchdog.WatchDog
-version: 1.1.0
-author: Section214
-website: http://section214.com
+main: com.widgetpowered.watchdog.WatchDog
+version: 1.2.0
+author: Widget Interactive
+website: https://widgetpowered.com
 description: Allows server staff to add players to a watchlist and receive notifications when they login
 dev-url: http://dev.bukkit.org/server-mods/watchdog/
 
 commands:
     wd:
-        description: 'WatchDog plugin commands'
+        description: 'WatchDog plugin command'
         aliases: [watchdog]
 
 permissions:
