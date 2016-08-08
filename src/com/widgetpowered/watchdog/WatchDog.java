@@ -52,7 +52,7 @@ public class WatchDog extends JavaPlugin {
 	 * @return      void
 	 */
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		String player = "";
+		String arg = "";
 		String reason = "";
 		Integer length = 0;
 
@@ -62,23 +62,29 @@ public class WatchDog extends JavaPlugin {
 
 				if (length > 0) {
 					if (length > 1) {
-						player = args[1];
-
+						arg = args[1];
+						
 						if (length > 2) {
-							reason = setupReason(args);
+							reason = stripPlayer(args);
 						}
 					}
 					
 					switch(args[0].toLowerCase()) {
 						case "add":
 							if (sender.hasPermission("watchdog.add") || sender.isOp()) {
-								addPlayer(sender, player, reason);
+								addPlayer(sender, arg, reason);
 							}
 							
 							return true;
 						case "remove":
 							if (sender.hasPermission("watchdog.remove") || sender.isOp()) {
-								removePlayer(sender, player);
+								removePlayer(sender, arg);
+							}
+							
+							return true;
+						case "notify":
+							if (sender.hasPermission("watchdog.statusupdates") || sender.isOp()) {
+								toggleNotify(sender, arg);
 							}
 							
 							return true;
@@ -86,10 +92,10 @@ public class WatchDog extends JavaPlugin {
 							getCount(sender);
 							return true;
 						case "search":
-							searchUsers(sender, player);
+							searchUsers(sender, arg);
 							return true;
 						case "info":
-							getInfo(sender, player);
+							getInfo(sender, arg);
 							return true;
 						case "help":
 						default:
@@ -106,13 +112,13 @@ public class WatchDog extends JavaPlugin {
 	
 	
 	/**
-	 * Setup the reason (if present)
+	 * Strip player name from args (if present)
 	 * 
 	 * @since       1.0.0
 	 * @param       args
 	 * @return      reason
 	 */
-	public String setupReason(String[] args) {
+	public String stripPlayer(String[] args) {
 		String reason = "";
 		
 		for (int i = 2; i < args.length; i++) {
@@ -120,6 +126,44 @@ public class WatchDog extends JavaPlugin {
 		}
 		
 		return reason;
+	}
+	
+	
+	/**
+	 * Toggle notification
+	 * 
+	 * @since       1.2.0
+	 * @return      void
+	 */
+	public void toggleNotify(CommandSender sender, String arg) {
+		String node = ("notify." + sender.getName()).toLowerCase();
+		String notice = "";
+		
+		if (arg.equals("status") || arg == null) {
+			String status = getConfig().getString(node);
+
+			if (status == "disabled") {
+				notice = getConfig().getString("messages.notificationsdisabled", "Your notifications are disabled.");
+			} else {
+				notice = getConfig().getString("messages.notificationsenabled", "Your notifications are enabled.");
+			}
+		} else if (arg.equals("enable") || arg.equals("on")) {
+			getConfig().set(node, "enabled");
+			saveConfig();
+			
+			notice = getConfig().getString("messages.notifyenable", "Notifications enabled!");
+		} else if(arg.equals("disable") || arg.equals("off")) {
+			getConfig().set(node, "disabled");
+			saveConfig();
+			
+			notice = getConfig().getString("messages.notifydisable", "Notifications disabled!");
+		}
+		
+		if (notice == "") {
+			sendHelp(sender);
+		} else {
+			printMessage(sender, "success", notice);
+		}
 	}
 	
 	
@@ -286,6 +330,7 @@ public class WatchDog extends JavaPlugin {
 				sender.sendMessage(ChatColor.GOLD + "/wd remove [player] -- Removes a player from the watchlist");
 			}
 			
+			sender.sendMessage(ChatColor.GOLD + "/wd notify [status|on|off] -- Enables/disables your notifications");
 			sender.sendMessage(ChatColor.GOLD + "/wd count -- Shows the number of players in the watchlist");
 			sender.sendMessage(ChatColor.GOLD + "/wd search [player] -- Search for a player in the watchlist");
 			sender.sendMessage(ChatColor.GOLD + "/wd info [player] -- Display the details of a watchlist entry");
@@ -301,8 +346,12 @@ public class WatchDog extends JavaPlugin {
 	 */
 	public void printMessage(CommandSender sender, String messageType, String message) {
 		if ((sender != null) && (sender instanceof Player)) {
-			String prefix = getConfig().getString("prefix." + messageType, "[WatchDog]");
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + ChatColor.WHITE + " " + message));
+			String status = getConfig().getString("notify." + sender.getName()).toLowerCase();
+
+			if(! messageType.equals("notice") || ! status.equals("disabled")) {
+				String prefix = getConfig().getString("prefix." + messageType, "[WatchDog]");
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + ChatColor.WHITE + " " + message));
+			}
 		}
 	}
 }
