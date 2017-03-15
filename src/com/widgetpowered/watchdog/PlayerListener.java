@@ -25,7 +25,7 @@ public class PlayerListener implements Listener {
 			
 			for (final Player player : WatchDog.getInstance().getServer().getOnlinePlayers()) {
 				if ((player != null) && (player instanceof Player) && (player.hasPermission("watchdog.statusupdates") || player.isOp())) {
-					WatchDog.getInstance().printMessage(player, "notice", onlineNotice);
+					WatchDog.getInstance().messenger.printMessage(player, "notice", onlineNotice);
 				}
 			}
 		}

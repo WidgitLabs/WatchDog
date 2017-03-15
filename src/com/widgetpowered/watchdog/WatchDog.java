@@ -6,7 +6,6 @@ import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WatchDog extends JavaPlugin {
@@ -16,6 +15,9 @@ public class WatchDog extends JavaPlugin {
 	 * The WatchDog instance
 	 */
 	private static WatchDog instance;
+	
+	
+	public Messenger messenger = new Messenger();
 	
 	
 	/**
@@ -162,7 +164,7 @@ public class WatchDog extends JavaPlugin {
 		if (notice == "") {
 			sendHelp(sender);
 		} else {
-			printMessage(sender, "success", notice);
+			messenger.printMessage(sender, "success", notice);
 		}
 	}
 	
@@ -192,7 +194,7 @@ public class WatchDog extends JavaPlugin {
 		getConfig().set((node + ".reason"), reason);
 		saveConfig();
 		
-		printMessage(sender, "success", notice);
+		messenger.printMessage(sender, "success", notice);
 	}
 	
 	
@@ -213,9 +215,9 @@ public class WatchDog extends JavaPlugin {
 			getConfig().set("users." + player, null);
 			saveConfig();
 			
-			printMessage(sender, "success", removedNotice);
+			messenger.printMessage(sender, "success", removedNotice);
 		} else {
-			printMessage(sender, "success", notFoundNotice);
+			messenger.printMessage(sender, "success", notFoundNotice);
 		}
 	}
 	
@@ -232,7 +234,7 @@ public class WatchDog extends JavaPlugin {
 			String addedOn = getConfig().getString("users." + player + ".addedon", "unknown");
 			String reason = getConfig().getString("users." + player + ".reason", "unknown");
 			
-			printMessage(sender, "success", "Player " + player + " entry:");
+			messenger.printMessage(sender, "success", "Player " + player + " entry:");
 			sender.sendMessage(ChatColor.GOLD + "    Added: " + ChatColor.WHITE + addedOn);
 			sender.sendMessage(ChatColor.GOLD + "    Added By: " + ChatColor.WHITE + addedBy);
 			sender.sendMessage(ChatColor.GOLD + "    Reason: " + ChatColor.WHITE + reason);
@@ -240,7 +242,7 @@ public class WatchDog extends JavaPlugin {
 			String notFoundNotice = getConfig().getString("messages.playernotfound", "Player %PLAYER% is not in the watchlist!");
 			notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
 			
-			printMessage(sender, "success", notFoundNotice);
+			messenger.printMessage(sender, "success", notFoundNotice);
 		}
 	}
 	
@@ -273,7 +275,7 @@ public class WatchDog extends JavaPlugin {
 				String addedOn = "";
 				String reason = "";
 				
-				printMessage(sender, "success", "Found the following " + userCount + " players:");
+				messenger.printMessage(sender, "success", "Found the following " + userCount + " players:");
 				
 				for(String foundUser: found) {
 					addedBy = getConfig().getString("users." + foundUser + ".addedby", "console");
@@ -284,7 +286,7 @@ public class WatchDog extends JavaPlugin {
 					sender.sendMessage("            - " + reason);
 				}
 			} else {
-				printMessage(sender, "success", "No users found matching \"" + player + "\"");
+				messenger.printMessage(sender, "success", "No users found matching \"" + player + "\"");
 			}
 		}
 	}
@@ -308,7 +310,7 @@ public class WatchDog extends JavaPlugin {
 			}
 		}
 		
-		printMessage(sender, "success", "There are " + userCount + " users in the watchlist.");
+		messenger.printMessage(sender, "success", "There are " + userCount + " users in the watchlist.");
 	}
 	
 	
@@ -334,24 +336,6 @@ public class WatchDog extends JavaPlugin {
 			sender.sendMessage(ChatColor.GOLD + "/wd count -- Shows the number of players in the watchlist");
 			sender.sendMessage(ChatColor.GOLD + "/wd search [player] -- Search for a player in the watchlist");
 			sender.sendMessage(ChatColor.GOLD + "/wd info [player] -- Display the details of a watchlist entry");
-		}
-	}
-	
-	
-	/**
-	 * Outputs a plugin message
-	 * 
-	 * @since       1.0.0
-	 * @return      void
-	 */
-	public void printMessage(CommandSender sender, String messageType, String message) {
-		if ((sender != null) && (sender instanceof Player)) {
-			String status = getConfig().getString("notify." + sender.getName().toLowerCase());
-
-			if(! messageType.equals("notice") || ! status.equals("disabled")) {
-				String prefix = getConfig().getString("prefix." + messageType, "[WatchDog]");
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + ChatColor.WHITE + " " + message));
-			}
 		}
 	}
 }
