@@ -346,7 +346,7 @@ public class WatchDog extends JavaPlugin {
 	 */
 	public void printMessage(CommandSender sender, String messageType, String message) {
 		if ((sender != null) && (sender instanceof Player)) {
-			String status = getConfig().getString("notify." + sender.getName()).toLowerCase();
+			String status = getConfig().getString("notify." + sender.getName().toLowerCase());
 
 			if(! messageType.equals("notice") || ! status.equals("disabled")) {
 				String prefix = getConfig().getString("prefix." + messageType, "[WatchDog]");
