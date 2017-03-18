@@ -19,7 +19,7 @@ public class PlayerListener implements Listener {
 		final Player newPlayer = event.getPlayer();
 		final String name = newPlayer.getDisplayName().toLowerCase();
 		
-		if (WatchDog.getInstance().getConfig().get("users." + name) != null) {
+		if (WatchDog.getInstance().getConfig().get("users." + name.toLowerCase()) != null) {
 			String onlineNotice = WatchDog.getInstance().getConfig().getString("messages.playeronline", "Player &c%PLAYER% &fhas logged in! Run &c/wd info %PLAYER% &ffor details.");
 			onlineNotice = onlineNotice.replace("%PLAYER%", name);
 			
