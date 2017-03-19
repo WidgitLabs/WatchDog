@@ -1,7 +1,6 @@
 package com.widgetpowered.watchdog;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 public class PlayerHandler {
 
@@ -14,7 +13,7 @@ public class PlayerHandler {
 	 */
 	public Boolean canAccess(CommandSender sender, String option) {
 		Boolean hasAccess = false;
-		
+
 		if (sender.isOp()) {
 			hasAccess = true;
 		} else {
@@ -35,18 +34,7 @@ public class PlayerHandler {
 				}
 			}
 		}
-		
+
 		return hasAccess;
-	}
-	
-	
-	/**
-	 * Get the UUID of a player
-	 *
-	 * @since       1.3.0
-	 * @return      String uuid The UUID of the player
-	 */
-	public String getUUID(Player player) {
-		return player.getUniqueId().toString();
 	}
 }

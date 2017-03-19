@@ -5,82 +5,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class CommandHandler {
-	
-	
-	/**
-	 * Command handler
-	 * 
-	 * @since       1.0.0
-	 * @return      void
-	 */
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		// Process calls to 'wd' and 'watchdog' only
-		if (! command.getName().equalsIgnoreCase("wd") && ! command.getName().equalsIgnoreCase("watchdog")) {
-			return false;
-		}
-
-		// Bail if user doesn't have at least the 'use' permission
-		if (! sender.hasPermission("watchdog.use")) {
-			return false;
-		}
-		
-		// Bail if no option is specified
-		if (args.length == 0) {
-			WatchDog.getInstance().messenger.sendHelp(sender);
-			return true;
-		}
-		
-		// Parse out the passed option
-		String option = args[0];
-		String player = args[1];
-		String reason, param;
-		
-		// Bail if the user can't access the specified option
-		if (! WatchDog.getInstance().playerHandler.canAccess(sender, option)) {
-			WatchDog.getInstance().messenger.sendHelp(sender);
-			return false;
-		}
-		
-		switch (option) {
-			case "add":
-				reason = WatchDog.getInstance().utils.parseReason(args);
-				
-				addPlayer(sender, player, reason);
-				break;
-			case "remove":				
-				removePlayer(sender, player);
-				break;
-			case "notify":
-				param = args[1];
-				
-				toggleNotify(sender, param);
-				break;
-			case "count":
-			case "list":
-				String status = args[1];
-				param = args[2];
-				
-				getWatchlist(sender, status, param);
-				break;
-			case "search":
-				searchUsers(sender, player);
-				break;
-			case "info":
-				getInfo(sender, player);
-				break;
-			case "help":
-			default:
-				break;
-		}
-		
-		WatchDog.getInstance().messenger.sendHelp(sender);
-		return true;
-	}
 	
 	
 	/**
@@ -90,8 +18,8 @@ public class CommandHandler {
 	 * @return      void
 	 */
 	public void addPlayer(CommandSender sender, String player, String reason) {
-		String node = ("users." + player).toLowerCase();
-		
+		Player targetPlayer = WatchDog.getInstance().getServer().getPlayerExact(player);
+		String playerUUID = "", node = "";
 		String notice = WatchDog.getInstance().getConfig().getString("messages.playeradded", "Player %PLAYER% has been added to the watchlist!");
 		notice = notice.replace("%PLAYER%", player);
 		
@@ -102,13 +30,27 @@ public class CommandHandler {
 		int min = cal.get(Calendar.MINUTE);
 		int sec = cal.get(Calendar.SECOND);
 		String time = String.format("%02d-%02d %02d:%02d:%02d", mon, day, hour, min, sec);
-
-		WatchDog.getInstance().getConfig().set((node + ".addedby"), sender.getName());
-		WatchDog.getInstance().getConfig().set((node + ".addedon"), time);
-		WatchDog.getInstance().getConfig().set((node + ".reason"), reason);
-		WatchDog.getInstance().saveConfig();
 		
-		WatchDog.getInstance().messenger.printMessage(sender, "success", notice);
+		if (! player.isEmpty()) {
+			if (targetPlayer != null) {
+				playerUUID = targetPlayer.getUniqueId().toString();
+			}
+
+			if (! playerUUID.isEmpty()) {
+				node = ("players." + playerUUID);
+
+				WatchDog.getInstance().getConfig().set((node + ".name"), player);
+			} else {
+				node = ("users." + player.toLowerCase());
+			}
+
+			WatchDog.getInstance().getConfig().set((node + ".addedby"), sender.getName());
+			WatchDog.getInstance().getConfig().set((node + ".addedon"), time);
+			WatchDog.getInstance().getConfig().set((node + ".reason"), reason);
+			WatchDog.getInstance().saveConfig();
+
+			WatchDog.getInstance().messenger.printMessage(sender, "success", notice);
+		}
 	}
 	
 	
@@ -119,19 +61,59 @@ public class CommandHandler {
 	 * @return      void
 	 */
 	public void removePlayer(CommandSender sender, String player) {
+		Player targetPlayer = WatchDog.getInstance().getServer().getPlayerExact(player);
+		String playerUUID = "";
+		Boolean found = false;
 		String removedNotice = WatchDog.getInstance().getConfig().getString("messages.playerremoved", "Player %PLAYER% has been removed from the watchlist!");
-		removedNotice = removedNotice.replace("%PLAYER%", player);
-		
 		String notFoundNotice = WatchDog.getInstance().getConfig().getString("messages.playernotfound", "Player %PLAYER% is not in the watchlist!");
-		notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
 		
-		if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {	
-			WatchDog.getInstance().getConfig().set("users." + player.toLowerCase(), null);
-			WatchDog.getInstance().saveConfig();
+		if (! player.isEmpty()) {
+			if (targetPlayer != null) {
+				playerUUID = targetPlayer.getUniqueId().toString();
+			}
 			
-			WatchDog.getInstance().messenger.printMessage(sender, "success", removedNotice);
-		} else {
-			WatchDog.getInstance().messenger.printMessage(sender, "success", notFoundNotice);
+			removedNotice = removedNotice.replace("%PLAYER%", player);
+			notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
+			
+			if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {
+				// Check old player name method
+				found = true;
+				
+				WatchDog.getInstance().getConfig().set("users." + player.toLowerCase(), null);
+				WatchDog.getInstance().saveConfig();
+			} else if (! playerUUID.isEmpty() && WatchDog.getInstance().getConfig().getString("players." + playerUUID) != null) {
+				// Check new UUID method
+				found = true;
+				
+				removedNotice = removedNotice.replace("%PLAYER%", WatchDog.getInstance().getConfig().getString("players." + playerUUID + ".name"));
+				notFoundNotice = notFoundNotice.replace("%PLAYER%", WatchDog.getInstance().getConfig().getString("players." + playerUUID + ".name"));
+
+				WatchDog.getInstance().getConfig().set("players." + playerUUID, null);
+				WatchDog.getInstance().saveConfig();
+			} else {
+				Set<String> players = WatchDog.getInstance().getConfig().getConfigurationSection("players").getKeys(true);
+
+				if (players != null) {
+					for (String playerRecord: players) {
+						if (! playerRecord.contains(".")) {
+							String playerName = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".name");
+
+							if (playerName.equalsIgnoreCase(player)) {
+								found = true;
+
+								WatchDog.getInstance().getConfig().set("players." + playerRecord, null);
+								WatchDog.getInstance().saveConfig();
+							}
+						}
+					}
+				}
+			}
+
+			if (found) {
+				WatchDog.getInstance().messenger.printMessage(sender, "success", removedNotice);
+			} else {
+				WatchDog.getInstance().messenger.printMessage(sender, "success", notFoundNotice);
+			}
 		}
 	}
 	
@@ -143,11 +125,22 @@ public class CommandHandler {
 	 * @return      void
 	 */
 	public void toggleNotify(CommandSender sender, String param) {
-		String node = ("notify." + sender.getName()).toLowerCase();
-		String notice = "";
+		String senderUUID = WatchDog.getInstance().getServer().getPlayerExact(sender.getName()).getUniqueId().toString();
+		
+		String oldNode = ("notify." + sender.getName()).toLowerCase();
+		String node = ("notify." + senderUUID);
+		String notice = "", status = "";
+		
+		// Convert to UUID if necessary
+		if (WatchDog.getInstance().getConfig().getString(oldNode) != null) {
+			status = WatchDog.getInstance().getConfig().getString(oldNode);
+			
+			WatchDog.getInstance().getConfig().set(node, status);
+			WatchDog.getInstance().getConfig().set(oldNode, null);
+		}
 		
 		if (param.equals("status") || param == null) {
-			String status = WatchDog.getInstance().getConfig().getString(node);
+			status = WatchDog.getInstance().getConfig().getString(node);
 
 			if (status == "disabled") {
 				notice = WatchDog.getInstance().getConfig().getString("messages.notificationsdisabled", "Your notifications are disabled.");
@@ -185,6 +178,7 @@ public class CommandHandler {
 		String userList = "";
 		String onlineStatus = " ";
 		
+		// Check old player name method
 		if (WatchDog.getInstance().getConfig().isConfigurationSection("users")) {
 			Set<String> users = WatchDog.getInstance().getConfig().getConfigurationSection("users").getKeys(true);
 			
@@ -200,6 +194,30 @@ public class CommandHandler {
 						} else {
 							userCount++;
 							userList += user + ", ";
+						}
+					}
+				}
+			}
+		}
+		
+		// Check new UUID method
+		if (WatchDog.getInstance().getConfig().isConfigurationSection("players")) {
+			Set<String> players = WatchDog.getInstance().getConfig().getConfigurationSection("players").getKeys(true);
+			
+			if (players != null) {
+				for (String player: players) {
+					if (! player.contains(".")) {
+						String playerName = WatchDog.getInstance().getConfig().getString("players." + player + ".name");
+
+						if (online.equals("online")) {
+							Player targetPlayer = WatchDog.getInstance().getServer().getPlayer(playerName);
+							if (targetPlayer != null && targetPlayer.isOnline()) {
+								userCount++;
+								userList += playerName + ", ";
+							}
+						} else {
+							userCount++;
+							userList += playerName + ", ";
 						}
 					}
 				}
@@ -235,39 +253,57 @@ public class CommandHandler {
 	 * @return      void
 	 */
 	public void searchUsers(CommandSender sender, String player) {
-		if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {
-			getInfo(sender, player);
-		} else {
-			Set<String> users = WatchDog.getInstance().getConfig().getConfigurationSection("users").getKeys(true);
-			Set<String> found = new HashSet<String>();
-			int userCount = 0;
-			
-			if (users != null) {
-				for(String user: users) {
-					if(! user.contains(".") && user.toLowerCase().contains(player.toLowerCase())) {
-						found.add(user);
-						userCount++;
+		Player targetPlayer = WatchDog.getInstance().getServer().getPlayerExact(player);
+		String playerUUID = "";
+		
+		if (! player.isEmpty()) {
+			if (targetPlayer != null) {
+				playerUUID = targetPlayer.getUniqueId().toString();
+			}
+		
+			if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {
+				// Check old name based method
+				getInfo(sender, player);
+			} else if(! playerUUID.isEmpty() && WatchDog.getInstance().getConfig().get("players." + playerUUID) != null) {
+				// Check new UUID method
+				getInfo(sender, player);
+			} else {
+				Set<String> users = WatchDog.getInstance().getConfig().getConfigurationSection("users").getKeys(true);
+				Set<String> players = WatchDog.getInstance().getConfig().getConfigurationSection("players").getKeys(true);
+				Set<String> found = new HashSet<String>();
+				int userCount = 0;
+				
+				if (users != null) {
+					for (String user: users) {
+						if (! user.contains(".") && user.toLowerCase().contains(player.toLowerCase())) {
+							found.add(user);
+							userCount++;
+						}
 					}
 				}
-			}
-
-			if (! found.isEmpty()) {
-				String addedBy = "";
-				String addedOn = "";
-				String reason = "";
-				
-				WatchDog.getInstance().messenger.printMessage(sender, "success", "Found the following " + userCount + " players:");
-				
-				for(String foundUser: found) {
-					addedBy = WatchDog.getInstance().getConfig().getString("users." + foundUser + ".addedby", "console");
-					addedOn = WatchDog.getInstance().getConfig().getString("users." + foundUser + ".addedon", "unknown");
-					reason = WatchDog.getInstance().getConfig().getString("users." + foundUser + ".reason", "unknown");
-					
-					sender.sendMessage(ChatColor.GOLD + "    + " + ChatColor.WHITE + foundUser + ChatColor.GOLD + " [" + addedBy + " / " + addedOn + "]");
-					sender.sendMessage("            - " + reason);
+			
+				if (players != null) {
+					for (String playerRecord: players) {
+						if (! playerRecord.contains(".")) {
+							String targetPlayerName = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".name");
+							
+							if (targetPlayerName.toLowerCase().contains(player.toLowerCase())) {
+								found.add(targetPlayerName);
+								userCount++;
+							}
+						}
+					}
 				}
-			} else {
-				WatchDog.getInstance().messenger.printMessage(sender, "success", "No users found matching \"" + player + "\"");
+
+				if (! found.isEmpty()) {
+					WatchDog.getInstance().messenger.printMessage(sender, "success", "Found the following " + userCount + " players:");
+					
+					for(String foundUser: found) {
+						getInfo(sender, foundUser);
+					}
+				} else {
+					WatchDog.getInstance().messenger.printMessage(sender, "success", "No users found matching \"" + player + "\"");
+				}
 			}
 		}
 	}
@@ -280,20 +316,57 @@ public class CommandHandler {
 	 * @return      void
 	 */
 	public void getInfo(CommandSender sender, String player) {
-		if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {
-			String addedBy = WatchDog.getInstance().getConfig().getString("users." + player + ".addedby", "console");
-			String addedOn = WatchDog.getInstance().getConfig().getString("users." + player + ".addedon", "unknown");
-			String reason = WatchDog.getInstance().getConfig().getString("users." + player + ".reason", "unknown");
+		Boolean found = false;
+		String addedBy = "", addedOn = "", reason = "";
+		Player targetPlayer = WatchDog.getInstance().getServer().getPlayerExact(player);
+		String playerUUID = "";
+		
+		if (! player.isEmpty()) {
+			if (targetPlayer != null) {
+				playerUUID = targetPlayer.getUniqueId().toString();
+			}
 			
-			WatchDog.getInstance().messenger.printMessage(sender, "success", "Player " + player + " entry:");
-			sender.sendMessage(ChatColor.GOLD + "    Added: " + ChatColor.WHITE + addedOn);
-			sender.sendMessage(ChatColor.GOLD + "    Added By: " + ChatColor.WHITE + addedBy);
-			sender.sendMessage(ChatColor.GOLD + "    Reason: " + ChatColor.WHITE + reason);
-		} else {
-			String notFoundNotice = WatchDog.getInstance().getConfig().getString("messages.playernotfound", "Player %PLAYER% is not in the watchlist!");
-			notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
-			
-			WatchDog.getInstance().messenger.printMessage(sender, "success", notFoundNotice);
+			if (WatchDog.getInstance().getConfig().get("users." + player.toLowerCase()) != null) {
+				found = true;
+				
+				addedBy = WatchDog.getInstance().getConfig().getString("users." + player.toLowerCase() + ".addedby", "console");
+				addedOn = WatchDog.getInstance().getConfig().getString("users." + player.toLowerCase() + ".addedon", "unknown");
+				reason = WatchDog.getInstance().getConfig().getString("users." + player.toLowerCase() + ".reason", "unknown");
+			} else if (! playerUUID.isEmpty() && WatchDog.getInstance().getConfig().getString("players." + playerUUID) != null) {
+				found = true;
+	
+				addedBy = WatchDog.getInstance().getConfig().getString("players." + playerUUID + ".addedby", "console");
+				addedOn = WatchDog.getInstance().getConfig().getString("players." + playerUUID + ".addedon", "unknown");
+				reason = WatchDog.getInstance().getConfig().getString("players." + playerUUID + ".reason", "unknown");
+			} else {
+				Set<String> players = WatchDog.getInstance().getConfig().getConfigurationSection("players").getKeys(true);
+
+				if (players != null) {
+					for (String playerRecord: players) {
+						String playerName = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".name");
+						
+						if (playerName.toLowerCase() == player.toLowerCase()) {
+							found = true;
+							
+							addedBy = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".addedby", "console");
+							addedOn = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".addedon", "unknown");
+							reason = WatchDog.getInstance().getConfig().getString("players." + playerRecord + ".reason", "unknown");
+						}
+					}
+				}
+			}
+
+			if (found) {
+				WatchDog.getInstance().messenger.printMessage(sender, "success", "Player " + player + " entry:");
+				sender.sendMessage(ChatColor.GOLD + "    Added: " + ChatColor.WHITE + addedOn);
+				sender.sendMessage(ChatColor.GOLD + "    Added By: " + ChatColor.WHITE + addedBy);
+				sender.sendMessage(ChatColor.GOLD + "    Reason: " + ChatColor.WHITE + reason);
+			} else {
+				String notFoundNotice = WatchDog.getInstance().getConfig().getString("messages.playernotfound", "Player %PLAYER% is not in the watchlist!");
+				notFoundNotice = notFoundNotice.replace("%PLAYER%", player);
+				
+				WatchDog.getInstance().messenger.printMessage(sender, "success", notFoundNotice);
+			}
 		}
 	}
 }

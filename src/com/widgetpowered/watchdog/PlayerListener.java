@@ -17,9 +17,27 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		final Player newPlayer = event.getPlayer();
-		final String name = newPlayer.getDisplayName().toLowerCase();
+		final String name = newPlayer.getDisplayName();
+		final String playerUUID = newPlayer.getUniqueId().toString();
 		
-		if (WatchDog.getInstance().getConfig().get("users." + name.toLowerCase()) != null) {
+		// Convert to UUID if necessary
+		if (WatchDog.getInstance().getConfig().getString("users." + name.toLowerCase()) != null) {
+			String node = ("players." + playerUUID);
+			
+			String addedBy = WatchDog.getInstance().getConfig().getString("users." + name.toLowerCase() + ".addedby");
+			String addedOn = WatchDog.getInstance().getConfig().getString("users." + name.toLowerCase() + ".addedon");
+			String reason = WatchDog.getInstance().getConfig().getString("users." + name.toLowerCase() + ".reason");
+			
+			WatchDog.getInstance().getConfig().set((node + ".name"), name);
+			WatchDog.getInstance().getConfig().set((node + ".addedby"), addedBy);
+			WatchDog.getInstance().getConfig().set((node + ".addedon"), addedOn);
+			WatchDog.getInstance().getConfig().set((node + ".reason"), reason);
+			
+			WatchDog.getInstance().getConfig().set("users." + name.toLowerCase(), null);
+			WatchDog.getInstance().saveConfig();
+		}
+		
+		if (WatchDog.getInstance().getConfig().get("players." + playerUUID) != null) {
 			String onlineNotice = WatchDog.getInstance().getConfig().getString("messages.playeronline", "Player &c%PLAYER% &fhas logged in! Run &c/wd info %PLAYER% &ffor details.");
 			onlineNotice = onlineNotice.replace("%PLAYER%", name);
 			
