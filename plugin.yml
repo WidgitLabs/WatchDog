@@ -1,6 +1,6 @@
 name: WatchDog
 main: com.widgetpowered.watchdog.WatchDog
-version: 1.3.0
+version: 1.3.1
 author: Widget Interactive
 website: https://widgetpowered.com
 description: Allows server staff to add players to a watchlist and receive notifications when they login

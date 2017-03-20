@@ -4,6 +4,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+
 public class WatchDog extends JavaPlugin {
 	
 	
@@ -30,6 +31,8 @@ public class WatchDog extends JavaPlugin {
 	 */
 	@Override
 	public void onEnable() {
+		new UpdateCheck(this).checkForUpdates();
+		
 		saveDefaultConfig();
 		
 		instance = this;
